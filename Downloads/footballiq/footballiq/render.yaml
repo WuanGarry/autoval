@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: footballiq
+    env: python
+    region: oregon
+    plan: free
+    buildCommand: "chmod +x build.sh && ./build.sh"
+    startCommand: "gunicorn backend.app:app --workers 2 --bind 0.0.0.0:$PORT --timeout 120"
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11.9"
+      - key: FOOTBALL_DATA_ORG_KEY
+        sync: false   # optional — set in Render dashboard for UCL/UEL/UECL
+                      # free key at football-data.org/client/register
