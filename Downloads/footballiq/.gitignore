@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.Python
+*.egg-info/
+dist/
+build/
+
+# Virtual environments
+venv/
+env/
+.venv/
+
+# Environment variables
+.env
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+
+# Logs
+*.log
+last_update.json
+
+# Data files are intentionally NOT ignored
+# They get downloaded fresh during every Render build
+# But we exclude them from git to keep repo small
+data/Matches.csv
+data/EloRatings.csv
+data/processed/
