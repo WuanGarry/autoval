@@ -31,19 +31,67 @@ def get_seasons(n=4):
 
 # Main leagues
 MAIN_LEAGUES = {
-    "E0": "E0", "E1": "E1", "E2": "E2", "E3": "E3",
-    "SP1":"SP1","SP2":"SP2","D1": "D1", "D2": "D2",
-    "I1": "I1", "I2": "I2", "F1": "F1", "F2": "F2",
-    "N1": "N1", "B1": "B1", "P1": "P1", "T1": "T1",
-    "SC0":"SC0","SC1":"SC1","SC2":"SC2","SC3":"SC3",
+    # England
+    "E0": "E0",   # Premier League
+    "E1": "E1",   # Championship
+    "E2": "E2",   # League One
+    "E3": "E3",   # League Two
+    # Spain
+    "SP1":"SP1",  # La Liga
+    "SP2":"SP2",  # Segunda
+    # Germany
+    "D1": "D1",   # Bundesliga
+    "D2": "D2",   # 2. Bundesliga
+    # Italy
+    "I1": "I1",   # Serie A   (Serie B removed — replaced by Norway)
+    # France
+    "F1": "F1",   # Ligue 1
+    "F2": "F2",   # Ligue 2
+    # Other domestic
+    "N1": "N1",   # Dutch Eredivisie
+    "B1": "B1",   # Belgian First Division
+    "P1": "P1",   # Portuguese Primeira Liga
+    "T1": "T1",   # Turkish Süper Lig
+    "SC0":"SC0",  # Scottish Premiership  (SC1/SC2/SC3 removed — replaced by UEFA cups)
 }
 
 # Extra leagues
 EXTRA_LEAGUES = {
-    "ARG":"ARG","AUT":"AT1","BRA":"BSA","DNK":"DK1",
-    "GRC":"GR1","JPN":"JP1","MEX":"MX1","NOR":"NO1",
-    "POL":"PL1","ROM":"RO1","SWE":"SE1","SWZ":"CH1","USA":"MLS",
+    "ARG":"ARG",  # Argentina
+    "AUT":"AT1",  # Austria
+    "BRA":"BSA",  # Brazil Série A
+    "DNK":"DK1",  # Denmark
+    "GRC":"GR1",  # Greece
+    "JPN":"JP1",  # Japan J1
+    "MEX":"MX1",  # Mexico Liga MX
+    "NOR":"NO1",  # Norway Eliteserien  ← replaces Italian Serie B
+    "POL":"PL1",  # Poland
+    "ROM":"RO1",  # Romania
+    "SWE":"SE1",  # Sweden
+    "SWZ":"CH1",  # Switzerland
+    "USA":"MLS",  # MLS
 }
+
+# ── UEFA competitions ─────────────────────────────────────────────────────────
+# Source: football-data.org free API  (register free at football-data.org)
+# CL  = Champions League  (FREE tier — just needs a free registered key)
+# EL  = Europa League     (free tier includes this too)
+# UCL = Conference League (code is UCL on their API — confusingly named)
+#
+# Set env var: FOOTBALL_DATA_ORG_KEY=your_free_key
+# Get key free at: https://www.football-data.org/client/register
+#
+UEFA_COMPS = {
+    "CL":  "UCL",   # Champions League
+    "EL":  "UEL",   # Europa League
+    "UCL": "UECL",  # Conference League (football-data.org calls it UCL)
+}
+FD_ORG_BASE = "https://api.football-data.org/v4"
+FD_ORG_KEY  = os.environ.get("FOOTBALL_DATA_ORG_KEY", "")
+
+RESULT_MAP = {"HOME_TEAM": "H", "AWAY_TEAM": "A", "DRAW": "D"}
+
+
 
 BASE    = "https://www.football-data.co.uk"
 COL_MAP = {
@@ -104,6 +152,93 @@ def clean_df(df, div_override=None):
     return df[[c for c in KEEP_COLS if c in df.columns]]
 
 
+
+def fetch_uefa(seasons_back=2):
+    """
+    Fetch UCL / UEL / UECL results from football-data.org.
+    Requires a FREE registered key from football-data.org/client/register
+    Set env var: FOOTBALL_DATA_ORG_KEY=your_key
+    If key is missing, this step is silently skipped.
+    """
+    if not FD_ORG_KEY:
+        log.info("\n  UEFA comps: set FOOTBALL_DATA_ORG_KEY env var for UCL/UEL/UECL")
+        log.info("  (free key at football-data.org/client/register)")
+        return pd.DataFrame()
+
+    from datetime import date as _date
+    yr   = _date.today().year if _date.today().month >= 7 else _date.today().year - 1
+    rows = []
+
+    log.info(f"\nFetching UEFA competitions (football-data.org)...")
+    for comp_code, our_div in UEFA_COMPS.items():
+        for season_yr in range(yr, yr - seasons_back, -1):
+            url    = f"{FD_ORG_BASE}/competitions/{comp_code}/matches"
+            params = {"season": season_yr, "status": "FINISHED"}
+            hdrs   = {"X-Auth-Token": FD_ORG_KEY}
+            try:
+                r = requests.get(url, headers=hdrs, params=params, timeout=30)
+                if r.status_code == 403:
+                    log.warning(f"  {comp_code} {season_yr}: 403 — may need higher tier key")
+                    break
+                if r.status_code == 429:
+                    log.warning("  Rate limited — waiting 65s...")
+                    time.sleep(65)
+                    continue
+                r.raise_for_status()
+                matches = r.json().get("matches", [])
+                season_rows = 0
+                for m in matches:
+                    try:
+                        score = m["score"]
+                        ft    = score["fullTime"]
+                        ht    = score.get("halfTime") or {}
+                        if ft.get("home") is None:
+                            continue
+                        winner = (score.get("winner") or "")
+                        ftr    = RESULT_MAP.get(winner, "D")
+                        fth, fta = int(ft["home"]), int(ft["away"])
+                        hth  = ht.get("home")
+                        hta  = ht.get("away")
+                        htr  = ("H" if hth > hta else ("A" if hta > hth else "D")) \
+                               if hth is not None and hta is not None else ""
+                        dstr = datetime.strptime(
+                            m["utcDate"][:10], "%Y-%m-%d"
+                        ).strftime("%d-%m-%Y")
+                        rows.append({
+                            "Division":   our_div,
+                            "MatchDate":  dstr,
+                            "MatchTime":  "",
+                            "HomeTeam":   m["homeTeam"]["name"],
+                            "AwayTeam":   m["awayTeam"]["name"],
+                            "HomeElo": "", "AwayElo": "",
+                            "Form3Home":"","Form5Home":"",
+                            "Form3Away":"","Form5Away":"",
+                            "FTHome": fth, "FTAway": fta, "FTResult": ftr,
+                            "HTHome": int(hth) if hth is not None else "",
+                            "HTAway": int(hta) if hta is not None else "",
+                            "HTResult": htr,
+                            "HomeCorners":"","AwayCorners":"",
+                            "HomeYellow":"","AwayYellow":"",
+                            "HomeRed":"","AwayRed":"",
+                            "HomeShots":"","AwayShots":"",
+                        })
+                        season_rows += 1
+                    except Exception:
+                        continue
+                log.info(f"  {comp_code} {season_yr}: {season_rows} matches")
+                time.sleep(1.0)
+            except Exception as e:
+                log.warning(f"  {comp_code} {season_yr}: {e}")
+
+    if not rows:
+        return pd.DataFrame()
+
+    df = pd.DataFrame(rows)
+    for c in KEEP_COLS:
+        if c not in df.columns:
+            df[c] = ""
+    return df[[c for c in KEEP_COLS if c in df.columns]]
+
 def fetch_all():
     seasons = get_seasons(n=4)
     log.info(f"Fetching seasons: {seasons}")
@@ -159,6 +294,15 @@ def fetch_all():
     if total_rows == 0:
         log.error("No data fetched!")
         return False
+
+    # UEFA competitions (free key from football-data.org)
+    df_uefa = fetch_uefa()
+    if not df_uefa.empty:
+        df_uefa.to_csv(out_path, mode="a", index=False, header=not header_written)
+        header_written = True
+        total_rows += len(df_uefa)
+        log.info(f"  UEFA comps: {len(df_uefa)} rows added")
+        del df_uefa; gc.collect()
 
     # Deduplicate
     log.info(f"\nDeduplicating {total_rows:,} rows...")

@@ -9,3 +9,6 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: "3.11.9"
+      - key: FOOTBALL_DATA_ORG_KEY
+        sync: false   # optional — set in Render dashboard for UCL/UEL/UECL
+                      # free key at football-data.org/client/register

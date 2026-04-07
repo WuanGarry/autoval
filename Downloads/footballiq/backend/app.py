@@ -83,55 +83,48 @@ def api_divisions():
     divisions = predictor.get_divisions()
     # Human-readable labels for all supported competitions
     labels = {
-        # ── UEFA / Europe ──────────────────────────────────────────────────
-        "UCL":    "UEFA Champions League",
-        "UEL":    "UEFA Europa League",
-        "UECL":   "UEFA Europa Conference League",
-        # ── England ────────────────────────────────────────────────────────
-        "E0":     "English Premier League",
-        "E1":     "English Championship",
-        "E2":     "English League One",
-        "E3":     "English League Two",
-        # ── Spain ──────────────────────────────────────────────────────────
-        "SP1":    "Spanish La Liga",
-        "SP2":    "Spanish Segunda División",
-        # ── Germany ────────────────────────────────────────────────────────
-        "D1":     "German Bundesliga",
-        "D2":     "German 2. Bundesliga",
-        # ── Italy ──────────────────────────────────────────────────────────
-        "I1":     "Italian Serie A",
-        "I2":     "Italian Serie B",
-        # ── France ─────────────────────────────────────────────────────────
-        "F1":     "French Ligue 1",
-        "F2":     "French Ligue 2",
-        # ── Benelux ────────────────────────────────────────────────────────
-        "N1":     "Dutch Eredivisie",
-        "B1":     "Belgian Jupiler Pro League",
-        # ── Iberia / Turkey / Scotland ─────────────────────────────────────
-        "P1":     "Portuguese Primeira Liga",
-        "T1":     "Turkish Süper Lig",
-        "SC0":    "Scottish Premiership",
-        "SC1":    "Scottish Championship",
-        "SC2":    "Scottish League One",
-        "SC3":    "Scottish League Two",
-        # ── Rest of Europe ─────────────────────────────────────────────────
-        "GR1":    "Greek Super League",
-        "AT1":    "Austrian Bundesliga",
-        "CH1":    "Swiss Super League",
-        "DK1":    "Danish Superliga",
-        "SE1":    "Swedish Allsvenskan",
-        "RU1":    "Russian Premier League",
-        "UA1":    "Ukrainian Premier League",
-        "RO1":    "Romanian Liga I",
-        "HR1":    "Croatian HNL",
-        # ── Americas ───────────────────────────────────────────────────────
-        "BSA":    "Brazilian Série A",
-        "ARG":    "Argentine Liga Profesional",
-        "MLS":    "MLS (USA / Canada)",
-        "MX1":    "Liga MX (Mexico)",
-        "COPLIB": "Copa Libertadores",
-        # ── Asia ───────────────────────────────────────────────────────────
-        "JP1":    "J1 League (Japan)",
+        # ── UEFA European Competitions ──────────────────────────────────
+        "UCL":  "UEFA Champions League",
+        "UEL":  "UEFA Europa League",
+        "UECL": "UEFA Europa Conference League",
+        # ── England ─────────────────────────────────────────────────────
+        "E0":   "English Premier League",
+        "E1":   "English Championship",
+        "E2":   "English League One",
+        "E3":   "English League Two",
+        # ── Spain ───────────────────────────────────────────────────────
+        "SP1":  "Spanish La Liga",
+        "SP2":  "Spanish Segunda División",
+        # ── Germany ─────────────────────────────────────────────────────
+        "D1":   "German Bundesliga",
+        "D2":   "German 2. Bundesliga",
+        # ── Italy ───────────────────────────────────────────────────────
+        "I1":   "Italian Serie A",
+        # ── France ──────────────────────────────────────────────────────
+        "F1":   "French Ligue 1",
+        "F2":   "French Ligue 2",
+        # ── Other European ──────────────────────────────────────────────
+        "N1":   "Dutch Eredivisie",
+        "B1":   "Belgian First Division A",
+        "P1":   "Portuguese Primeira Liga",
+        "T1":   "Turkish Süper Lig",
+        "SC0":  "Scottish Premiership",
+        "NO1":  "Norwegian Eliteserien",
+        # ── Rest of Europe ──────────────────────────────────────────────
+        "GR1":  "Greek Super League",
+        "AT1":  "Austrian Bundesliga",
+        "CH1":  "Swiss Super League",
+        "DK1":  "Danish Superliga",
+        "SE1":  "Swedish Allsvenskan",
+        "PL1":  "Polish Ekstraklasa",
+        "RO1":  "Romanian Liga I",
+        # ── Americas ────────────────────────────────────────────────────
+        "BSA":  "Brazilian Série A",
+        "ARG":  "Argentine Liga Profesional",
+        "MLS":  "MLS (USA / Canada)",
+        "MX1":  "Liga MX (Mexico)",
+        # ── Asia ────────────────────────────────────────────────────────
+        "JP1":  "J1 League (Japan)",
     }
     result = [
         {"code": d, "label": labels.get(d, d)}
