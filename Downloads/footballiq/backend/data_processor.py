@@ -8,6 +8,7 @@ Supports both .parquet (fast, requires pyarrow) and .csv fallback.
 """
 
 import os
+import gc
 import pandas as pd
 import numpy as np
 from pathlib import Path
@@ -237,15 +238,10 @@ TARGET_AWAY_YLW  = "AwayYellow"
 # ─────────────────────────────────────────────────────────────────────────────
 
 def _save_df(df: pd.DataFrame, path: Path):
-    try:
-        import pyarrow  # noqa: F401
-        p = path.with_suffix(".parquet")
-        df.to_parquet(p, index=False)
-        print(f"Saved (parquet) → {p}")
-    except ImportError:
-        p = path.with_suffix(".csv")
-        df.to_csv(p, index=False)
-        print(f"Saved (csv) → {p}")
+    # Always use CSV — parquet needs pyarrow which adds memory overhead
+    p = path.with_suffix(".csv")
+    df.to_csv(p, index=False)
+    print(f"Saved → {p}  ({len(df):,} rows)")
 
 
 def _load_df(path: Path) -> pd.DataFrame:
